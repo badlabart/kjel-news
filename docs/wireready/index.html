@@ -85,11 +85,11 @@ body{margin:0;background:#0A2A50;color:#0A2A50;font-family:Arial,Helvetica,sans-
 .wrfp .col{max-height:calc(100vh - 140px);overflow-y:auto}
 .wrtool .edlink{background:#FDB913;color:#0A2A50;text-decoration:none}
 </style></head>
-<body data-updated="1794059130000">
+<body data-updated="1794239496000">
 <div class="top"><div class="logo">103<span class="star">&#9733;</span>7 <span class="call">KJEL</span></div>
 <div class="hd"><div class="title">WireReady</div>
-<div class="meta">KJEL WireReady &middot; updated Sat Nov 7, 7:45 AM</div></div></div>
-<div class="stale" id="stale">This report is more than a day old. The 6 AM refresh did not run.</div>
+<div class="meta">KJEL WireReady &middot; updated Mon Nov 9, 9:51 AM</div></div></div>
+<div class="stale" id="stale">This report is more than a day old. The morning refresh did not run.</div>
 
 <div class="wrtool"><button class="wradd" type="button" id="wradd">+ Add Story</button><div class="wrlock" id="wrlock" style="display:none"><input type="password" id="wrpass" placeholder="Passcode"> <button type="button" id="wrunlock">Unlock</button></div><div class="empty" id="wrmsg">Loading...</div></div>
 <div class="board wrfp"><div class="col wr"><h2>MOnet <span class="count" id="wrc-wr-MOnet">0</span></h2><div class="wrlist" data-by="MOnet" data-count="wrc-wr-MOnet"></div></div><div class="col wr"><h2>Bruce <span class="count" id="wrc-wr-B">0</span></h2><div class="wrlist" data-by="B" data-count="wrc-wr-B"></div></div><div class="col wr"><h2>Jeff <span class="count" id="wrc-wr-J">0</span></h2><div class="wrlist" data-by="J" data-count="wrc-wr-J"></div></div><div class="col wr"><h2>Riley <span class="count" id="wrc-wr-R">0</span></h2><div class="wrlist" data-by="R" data-count="wrc-wr-R"></div></div></div>
@@ -156,7 +156,10 @@ function kjSearch(){
     else if(dd===tmr && dl){ dl.innerHTML=nd?dl.innerHTML+' &middot; TOMORROW':'TOMORROW &middot; '+dl.innerHTML; }
   }
   var u=parseInt(document.body.getAttribute('data-updated'),10);
-  if(u && now-u>30*3600000){var s=document.getElementById('stale'); if(s) s.style.display='block';}
+  // Boss (2026-11-07): News and Show Prep refresh Monday to Friday only, so a weekend page is not stale. No warning Saturday or Sunday,
+  // nor Monday before 7 AM (the Monday refresh is not due yet); every other time it still warns after 30 hours.
+  var dw=new Date().getDay(), hr=new Date().getHours();
+  if(u && now-u>30*3600000 && dw!==0 && dw!==6 && !(dw===1 && hr<7)){var s=document.getElementById('stale'); if(s) s.style.display='block';}
 })();
 
 (function(){
