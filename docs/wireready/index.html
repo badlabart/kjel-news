@@ -26,10 +26,12 @@ body{margin:0;background:#0A2A50;color:#0A2A50;font-family:Arial,Helvetica,sans-
 .pc{background:#0A2A50;color:#FFFFFF;font-weight:bold;padding:0 3px;border-radius:3px}.pc.leb{background:#FDB913;color:#0A2A50}
 .city{color:#33445C;white-space:nowrap}.city.leb{background:#FDB913;color:#0A2A50;padding:0 3px;border-radius:3px}
 .why{font-size:13px;margin-top:4px}
+.take{font-size:14px;font-weight:bold;font-style:italic;color:#B3121F;margin-top:5px}
 .sig{font-size:12px;margin-top:4px;color:#33445C}
 .sig b{color:#D0101F}
 .link{display:inline-block;margin-top:6px;font-size:12px;font-weight:bold;color:#0A2A50}
 .empty{font-size:13px;color:#33445C;padding:4px 4px 10px}
+.evh{background:#0A2A50;color:#FFFFFF;font-weight:bold;font-size:13px;letter-spacing:.5px;text-transform:uppercase;border-radius:6px;padding:5px 9px;margin:10px 0 8px}
 .punch{font-size:14px;margin-top:4px;font-style:italic}
 .search{margin:0 0 8px;padding:0 2px}
 .search input{font-size:14px;padding:5px 6px;border:1px solid #C9CFD8;border-radius:6px}
@@ -85,10 +87,10 @@ body{margin:0;background:#0A2A50;color:#0A2A50;font-family:Arial,Helvetica,sans-
 .wrfp .col{max-height:calc(100vh - 140px);overflow-y:auto}
 .wrtool .edlink{background:#FDB913;color:#0A2A50;text-decoration:none}
 </style></head>
-<body data-updated="1794395284000">
+<body data-updated="1794500635000">
 <div class="top"><div class="logo">103<span class="star">&#9733;</span>7 <span class="call">KJEL</span></div>
 <div class="hd"><div class="title">WireReady</div>
-<div class="meta">KJEL WireReady &middot; updated Wed Nov 11, 5:08 AM</div></div></div>
+<div class="meta">KJEL WireReady &middot; updated Thu Nov 12, 10:23 AM</div></div></div>
 <div class="stale" id="stale">This report is more than a day old. The morning refresh did not run.</div>
 
 <div class="wrtool"><button class="wradd" type="button" id="wradd">+ Add Story</button><div class="wrlock" id="wrlock" style="display:none"><input type="password" id="wrpass" placeholder="Passcode"> <button type="button" id="wrunlock">Unlock</button></div><div class="empty" id="wrmsg">Loading...</div></div>
@@ -107,6 +109,51 @@ function kjLoad(cb){
   };
   document.getElementsByTagName('head')[0].appendChild(s);
 }
+// Boss (2026-11-11): the Music search takes song titles too. With no current news, it looks up the story behind the song.
+// Songfacts' terms forbid bots and data-mining, so the story comes live from Wikipedia's free API (CC BY-SA, credited and
+// linked) and Songfacts is only a link the jock clicks.
+var KJ_WP='https://en.wikipedia.org/w/api.php?format=json&origin=*&action=query&prop=extracts&explaintext=1';
+function kjXhr(u,cb){
+  var x; try{x=new XMLHttpRequest();}catch(e){cb(null);return;}
+  x.onreadystatechange=function(){ if(x.readyState!==4) return; var d=null; try{d=JSON.parse(x.responseText);}catch(e2){} cb(d); };
+  try{x.open('GET',u,true); x.send(null);}catch(e3){cb(null);}
+}
+function kjPages(d){
+  var out=[],k,p; if(!d||!d.query||!d.query.pages) return out; p=d.query.pages;
+  for(k in p){ if(p.hasOwnProperty(k)) out.push(p[k]); }
+  out.sort(function(a,b){return (a.index||0)-(b.index||0);}); return out;
+}
+function kjCut(s,n){
+  s=String(s||'').replace(/=+[^=]+=+/g,' ').replace(/\s+/g,' ').replace(/^ | $/g,'');
+  if(s.length<=n) return s; var c=s.lastIndexOf('. ',n); return c>100 ? s.substring(0,c+1) : s.substring(0,n)+'...';
+}
+function kjSong(q, box, head){
+  var sf='https://www.songfacts.com/search/songs/'+encodeURIComponent(q);
+  var more='<a class="link" href="'+sf+'" target="_blank" rel="noopener">More facts on Songfacts &#8599;</a>';
+  box.innerHTML=head+'<div class="empty">No current news. Looking up the story behind the song...</div>';
+  // Boss (2026-11-11): COUNTRY ONLY. A page counts only when its opening says it is a song or single AND names country.
+  kjXhr(KJ_WP+'&exintro=1&exlimit=10&generator=search&gsrlimit=10&gsrsearch='+encodeURIComponent(q+' country song'), function(d){
+    var ps=kjPages(d), i, pick=null, lead;
+    for(i=0;i<ps.length;i++){
+      lead=(ps[i].extract||'').substring(0,400).toLowerCase();
+      if((lead.indexOf(' song')>=0||lead.indexOf('single')>=0) && lead.indexOf('country')>=0){pick=ps[i];break;}
+    }
+    if(!pick){ box.innerHTML=head+'<div class="empty">No current news and no COUNTRY song story found. Check the spelling or try the song title only.</div><div class="card">'+more+'</div>'; return; }
+    kjXhr(KJ_WP+'&exsectionformat=wiki&titles='+encodeURIComponent(pick.title), function(d2){
+      var full=(kjPages(d2)[0]||{}).extract||pick.extract||'', parts=full.split('\n== '), story='', j, n, nm;
+      var want=['background','history','content','composition','writing','inspiration','recording','origin'];
+      for(j=1;j<parts.length && !story;j++){
+        nm=parts[j].split(' ==')[0].toLowerCase();
+        for(n=0;n<want.length;n++){ if(nm.indexOf(want[n])===0){ story=parts[j].substring(parts[j].indexOf('==')+2); break; } }
+      }
+      box.innerHTML=head+'<div class="empty">No current news. Here is the story behind the song.</div>'
+        +'<div class="card"><div class="when">STORY BEHIND THE SONG <span class="src">&middot; Wikipedia</span></div>'
+        +'<div class="name">'+kjEsc(pick.title)+'</div><div class="why">'+kjEsc(kjCut(parts[0],700))+'</div>'
+        +(story?'<div class="why"><b>The story:</b> '+kjEsc(kjCut(story,900))+'</div>':'')
+        +'<a class="link" href="https://en.wikipedia.org/wiki/'+encodeURIComponent(pick.title.replace(/ /g,'_'))+'" target="_blank" rel="noopener">Wikipedia &#8599;</a> '+more+'</div>';
+    });
+  });
+}
 function kjClear(){
   document.getElementById('kjq').value=''; document.getElementById('kjres').style.display='none';
   document.getElementById('kjcards').style.display='block'; return false;
@@ -120,7 +167,7 @@ function kjSearch(){
     var all=window.KJEL_MUSIC||[], hits=[], i, h;
     for(i=0;i<all.length;i++){ if((all[i].t+' '+all[i].a).toLowerCase().indexOf(q)>=0) hits.push(all[i]); }
     h='<div class="sub">'+hits.length+(hits.length===1?' story':' stories')+' for &quot;'+kjEsc(q)+'&quot; &middot; <a href="#" onclick="return kjClear();">back to board</a></div>';
-    if(!hits.length) h+='<div class="empty">No news found. Try the last name only.</div>';
+    if(!hits.length){ kjSong(q, box, h); return; }
     for(i=0;i<hits.length && i<60;i++){
       var e=hits[i];
       h+='<div class="card"><div class="when">'+kjEsc(e.d)+' <span class="src">&middot; '+kjEsc(e.s)+'</span></div>'
